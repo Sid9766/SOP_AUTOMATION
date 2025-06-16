@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SOP Uploader</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h2>Upload SOP PDF</h2>
+
+  <form id="uploadForm">
+    <input type="file" id="pdfInput" accept=".pdf" />
+    <button type="submit">Upload</button>
+  </form>
+
+  <h3>Extracted SOP Steps:</h3>
+  <ul id="stepsList"></ul>
+
+  <h3>Flowchart View:</h3>
+  <div id="flowchartContainer">Upload a PDF to see the flowchart here.</div>
+
+  <!-- Mermaid.js (ESM) -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: false });
+    window.mermaid = mermaid;
+  </script>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>
