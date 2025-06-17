@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visual SOP Autopilot</title>
+  <link rel="stylesheet" href="enhanced_style.css" />
+
+  <!-- ✅ Chart.js (globally exposes 'Chart') -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+
+  <!-- ✅ Mermaid.js (ESM style, v10+) -->
+  <script type="module">
+    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+    mermaid.initialize({ startOnLoad: false, theme: 'default' });
+    window.mermaid = mermaid;
+  </script>
+
+  <!-- ✅ Your main script (should come after Chart.js and mermaid) -->
+  <script type="module" src="enhanced_app.js"></script>
+</head>
+
+<body>
+  <div class="container">
+    <header>
+      <h1>📄 SOP Autopilot Dashboard</h1>
+    </header>
+
+    <section class="upload-section">
+      <h2>Upload SOP PDF</h2>
+      <form id="uploadForm">
+        <input type="file" id="pdfInput" accept=".pdf" />
+        <button type="submit">Upload</button>
+      </form>
+    </section>
+
+    <section class="main-content">
+      <div class="left-panel">
+        <h3>📝 Extracted SOP Steps</h3>
+        <div id="cardsContainer"></div>
+
+        <h3>📊 SOP Analytics</h3>
+        <canvas id="chartCanvas" width="400" height="300"></canvas>
+      </div>
+
+      <div class="right-panel">
+        <h3>📈 Flowchart View</h3>
+        <div id="flowchartContainer" class="mermaid">Upload a PDF to view flowchart.</div>
+      </div>
+    </section>
+  </div>
+</body>
+</html>
