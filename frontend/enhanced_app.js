@@ -1,78 +1,119 @@
-window.addEventListener("DOMContentLoaded", () => {
+window.addEventListener('DOMContentLoaded', function () {
   const uploadForm = document.getElementById('uploadForm');
+  const uploadStatus = document.getElementById('uploadStatus');
+  const stepList = document.getElementById('stepList');
+  const flowchart = document.getElementById('flowchart');
+  const qaSidebar = document.getElementById('qaSidebar');
+  const qaToggleBtn = document.getElementById('qaToggleBtn');
+  const qaForm = document.getElementById('qaForm');
+  const qaInput = document.getElementById('qaInput');
+  const qaChatBox = document.getElementById('qaChatBox');
+
+  let currentSteps = [];
 
   uploadForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const fileInput = document.getElementById('pdfInput');
+    const fileInput = document.getElementById('pdf');
     const file = fileInput.files[0];
-    if (!file) {
-      alert("Please select a PDF first.");
-      return;
-    }
+    if (!file) return;
 
-    console.log("📤 Uploading file:", file.name);
     const formData = new FormData();
     formData.append('file', file);
 
+    uploadStatus.innerText = 'Uploading...';
+    stepList.innerHTML = '';
+    flowchart.innerText = 'Loading...';
+
     try {
-      const response = await fetch('http://localhost:8000/upload/', {
+      const response = await fetch('http://127.0.0.1:8000/upload/', {
         method: 'POST',
-        body: formData
+        body: formData,
       });
-
       const data = await response.json();
-      console.log("✅ Parsed steps from backend:", data.steps);
+      currentSteps = data.steps;
 
-      const steps = data.steps;
-
-      if (!Array.isArray(steps) || steps.length === 0) {
-        alert("No valid steps returned.");
+      if (currentSteps.length === 0) {
+        uploadStatus.innerText = 'No steps extracted.';
+        flowchart.innerText = '';
         return;
       }
 
-      renderStepCards(steps);
-      renderChart(steps);
-      renderMermaid(steps);
+      uploadStatus.innerText = '';
+      renderStepCards(currentSteps);
+      renderFlowchart(currentSteps);
+      renderChart(currentSteps);
 
     } catch (err) {
-      console.error("❌ Upload failed:", err);
-      alert("Something went wrong while uploading the PDF.");
+      console.error('Upload failed:', err);
+      uploadStatus.innerText = 'Something went wrong while uploading the PDF.';
     }
   });
 
-  // 💡 Card Renderer
   function renderStepCards(steps) {
-    const container = document.getElementById('cardsContainer');
-    container.innerHTML = '';
-    steps.forEach((step, idx) => {
-      const card = document.createElement('div');
-      card.className = 'step-card';
-      card.innerHTML = `<strong>Step ${idx + 1}:</strong> ${step}`;
-      container.appendChild(card);
+    stepList.innerHTML = '';
+    steps.forEach((step, index) => {
+      const li = document.createElement('li');
+      li.className = 'list-group-item';
+      li.innerText = `${index + 1}. ${step}`;
+      stepList.appendChild(li);
     });
   }
 
-  // 📊 Chart Renderer
-  function renderChart(steps) {
-    const ctx = document.getElementById('chartCanvas').getContext('2d');
-    const deptKeywords = ['HR', 'IT', 'Finance', 'Admin', 'Manager'];
-    const counts = deptKeywords.map(dept =>
-      steps.filter(step => step.toLowerCase().includes(dept.toLowerCase())).length
-    );
+ async function renderFlowchart(steps) {
+  const flowchart = document.getElementById('flowchart');
+  if (!window.mermaidRender || !flowchart) return;
 
+  const cleanedSteps = steps
+    .map(s => s.replace(/["']/g, '').trim())
+    .filter(s => s.length > 10);
+
+  if (cleanedSteps.length < 2) {
+    flowchart.innerHTML = '<p class="text-danger">Not enough steps to render flowchart.</p>';
+    return;
+  }
+
+  const graphDef = ['graph TD'];
+  cleanedSteps.forEach((step, i) => {
+    const id = `S${i}`;
+    const label = step.replace(/["]/g, '\\"');
+    if (i === 0) {
+      graphDef.push(`${id}["${label}"]`);
+    } else {
+      graphDef.push(`S${i - 1} --> ${id}["${label}"]`);
+    }
+  });
+  console.log("Mermaid input:");
+  console.log(graphDef.join('\n'));
+
+
+  try {
+    const { svg } = await window.mermaidRender.render('sopFlowchart', graphDef.join('\n'));
+    flowchart.innerHTML = svg;
+  } catch (err) {
+    console.error("Mermaid rendering error:", err);
+    flowchart.innerHTML = '<p class="text-danger">Error rendering flowchart.</p>';
+  }
+}
+
+
+
+  function renderChart(steps) {
+    const ctx = document.getElementById('stepBarChart').getContext('2d');
     new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: deptKeywords,
+        labels: steps.map((_, i) => `Step ${i + 1}`),
         datasets: [{
-          label: 'Mentions per Department',
-          data: counts,
-          backgroundColor: '#304ffe'
+          label: 'Step Length',
+          data: steps.map(step => step.length),
+          backgroundColor: '#007bff'
         }]
       },
       options: {
-        plugins: { legend: { display: false }},
+        responsive: true,
+        plugins: {
+          legend: { display: false }
+        },
         scales: {
           y: { beginAtZero: true }
         }
@@ -80,57 +121,39 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // ✅ Safe Mermaid Render
-  function renderMermaid(steps) {
-    const flowchartDiv = document.getElementById('flowchartContainer');
-    flowchartDiv.innerHTML = '';
+  // Q&A Toggle
+  qaToggleBtn.addEventListener('click', () => {
+    const isOpen = qaSidebar.style.transform === 'translateX(0%)';
+    qaSidebar.style.transform = isOpen ? 'translateX(100%)' : 'translateX(0%)';
+  });
 
-    if (!Array.isArray(steps) || steps.length === 0) {
-      flowchartDiv.innerHTML = '<p style="color:red;">No valid steps found.</p>';
-      return;
-    }
+  // Q&A Handler
+  qaForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const question = qaInput.value.trim();
+    if (!question) return;
 
-    function sanitize(text) {
-      return text
-        .replace(/["]/g, "'")
-        .replace(/[:]/g, " -")
-        .replace(/[<>]/g, "")
-        .replace(/\n/g, " ")
-        .replace(/\./g, "")
-        .replace(/[^a-zA-Z0-9\s\-']/g, "")
-        .trim();
-    }
+    const userMsg = document.createElement('div');
+    userMsg.innerHTML = `<strong>You:</strong> ${question}`;
+    qaChatBox.appendChild(userMsg);
 
-    let flowchart = 'graph TD;\n';
-
-    if (steps.length === 1) {
-      const label = sanitize(steps[0]);
-      flowchart += `A["${label}"];\n`;
-    } else {
-      steps.forEach((step, i) => {
-        const id = `s${i}`;
-        const nextId = `s${i + 1}`;
-        const label = sanitize(step);
-        flowchart += `${id}["${label}"];\n`;
-        if (i < steps.length - 1) {
-          flowchart += `${id} --> ${nextId};\n`;
-        }
+    try {
+      const res = await fetch('http://127.0.0.1:8000/ask/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question, context: currentSteps.join('\n'), use_web: true })
       });
+      const data = await res.json();
+      const botMsg = document.createElement('div');
+      botMsg.innerHTML = `<strong>Bot:</strong> ${data.answer}`;
+      qaChatBox.appendChild(botMsg);
+    } catch (err) {
+      const errorMsg = document.createElement('div');
+      errorMsg.innerHTML = `<strong>Error:</strong> Could not get an answer.`;
+      qaChatBox.appendChild(errorMsg);
     }
 
-    console.log("🧪 Mermaid Syntax:\n", flowchart);
-
-    const tempContainer = document.createElement('div');
-    document.body.appendChild(tempContainer);
-
-    window.mermaid.render('generatedChart', flowchart)
-      .then(({ svg }) => {
-        flowchartDiv.innerHTML = svg;
-        document.body.removeChild(tempContainer);
-      })
-      .catch((err) => {
-        flowchartDiv.innerHTML = `<p style="color:red;">Mermaid rendering failed: ${err.message}</p>`;
-        console.error("❌ Mermaid render() error:", err);
-      });
-  }
+    qaInput.value = '';
+    qaChatBox.scrollTop = qaChatBox.scrollHeight;
+  });
 });

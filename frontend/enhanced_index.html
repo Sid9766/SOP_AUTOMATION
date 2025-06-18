@@ -2,51 +2,109 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Visual SOP Autopilot</title>
-  <link rel="stylesheet" href="enhanced_style.css" />
-
-  <!-- ✅ Chart.js (globally exposes 'Chart') -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
-
-  <!-- ✅ Mermaid.js (ESM style, v10+) -->
-  <script type="module">
-    import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
-    mermaid.initialize({ startOnLoad: false, theme: 'default' });
-    window.mermaid = mermaid;
-  </script>
-
-  <!-- ✅ Your main script (should come after Chart.js and mermaid) -->
-  <script type="module" src="enhanced_app.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart SOP Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.3/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      background-color: #f5f6fa;
+      padding: 30px;
+    }
+    .section {
+      margin-bottom: 40px;
+    }
+    .card {
+      border: 1px solid #d1d1d1;
+      border-radius: 10px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+    }
+    .mermaid {
+      background-color: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+    }
+    #qaSidebar {
+      width: 350px;
+      height: 100vh;
+      position: fixed;
+      top: 0;
+      right: 0;
+      background: white;
+      border-left: 1px solid #ddd;
+      transform: translateX(100%);
+      transition: transform 0.3s;
+      z-index: 1050;
+      padding: 15px;
+    }
+    #qaToggleBtn {
+      position: fixed;
+      top: 50%;
+      right: 0;
+      transform: translateY(-50%);
+      z-index: 1100;
+      border-top-left-radius: 0;
+      border-bottom-left-radius: 0;
+    }
+  </style>
 </head>
 
 <body>
   <div class="container">
-    <header>
-      <h1>📄 SOP Autopilot Dashboard</h1>
-    </header>
+    <h1 class="mb-4">📄 Smart SOP Ingestion & Workflow Visualizer</h1>
 
-    <section class="upload-section">
-      <h2>Upload SOP PDF</h2>
+    <!-- Upload Section -->
+    <div class="section card p-4">
       <form id="uploadForm">
-        <input type="file" id="pdfInput" accept=".pdf" />
-        <button type="submit">Upload</button>
+        <div class="mb-3">
+          <label for="pdf" class="form-label">Upload SOP PDF:</label>
+          <input type="file" class="form-control" id="pdf" required />
+        </div>
+        <button type="submit" class="btn btn-primary">Upload</button>
+        <span id="uploadStatus" class="ms-3 text-danger"></span>
       </form>
-    </section>
+    </div>
 
-    <section class="main-content">
-      <div class="left-panel">
-        <h3>📝 Extracted SOP Steps</h3>
-        <div id="cardsContainer"></div>
+    <!-- Output Section -->
+    <div class="section card p-4">
+      <h4 class="mb-3">🧾 Extracted Steps</h4>
+      <ul id="stepList" class="list-group"></ul>
+    </div>
 
-        <h3>📊 SOP Analytics</h3>
-        <canvas id="chartCanvas" width="400" height="300"></canvas>
-      </div>
+    <!-- Charts Section -->
+    <div class="section card p-4">
+      <h4 class="mb-3">📊 Analytics</h4>
+      <canvas id="stepBarChart" height="100"></canvas>
+    </div>
 
-      <div class="right-panel">
-        <h3>📈 Flowchart View</h3>
-        <div id="flowchartContainer" class="mermaid">Upload a PDF to view flowchart.</div>
-      </div>
-    </section>
+    <!-- Flowchart Section -->
+    <div class="section card p-4">
+      <h4 class="mb-3">🔁 Workflow Flowchart</h4>
+      <div id="flowchart" class="mermaid">Loading...</div>
+    </div>
   </div>
+
+  <!-- Q&A Assistant Sidebar -->
+  <button id="qaToggleBtn" class="btn btn-dark">🗨️</button>
+
+  <div id="qaSidebar">
+    <h5>Q&A Assistant</h5>
+    <div id="qaChatBox" style="height: 65vh; overflow-y: auto; border: 1px solid #ddd; padding: 10px;" class="mb-2 rounded bg-light"></div>
+    <form id="qaForm" class="d-flex">
+      <input type="text" id="qaInput" class="form-control me-2" placeholder="Ask something..." required />
+      <button class="btn btn-primary" type="submit">Ask</button>
+    </form>
+  </div>
+  <script type="module">
+  import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
+  mermaid.initialize({ startOnLoad: true });
+  window.mermaidRender = mermaid;
+  </script>
+
+
+  <!-- JavaScript -->
+  <script src="enhanced_app.js"></script>
 </body>
 </html>
