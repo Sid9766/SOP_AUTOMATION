@@ -72,7 +72,7 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 📈 Mermaid Flowchart Renderer (fully safe + patched)
+  // 📈 Final Mermaid Flowchart Renderer (using mermaid.render)
   function renderMermaid(steps) {
     const flowchartDiv = document.getElementById('flowchartContainer');
     flowchartDiv.innerHTML = '';
@@ -112,18 +112,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
     console.log("🧪 Mermaid Flowchart:\n", flowchart);
 
-    // ✅ Safe render with detached anchor to avoid createElementNS error
-    const tempContainer = document.createElement('div');
-    document.body.appendChild(tempContainer);
-
-    window.mermaid.render('generatedChart', flowchart)
-      .then(({ svg }) => {
-        flowchartDiv.innerHTML = svg;
-        document.body.removeChild(tempContainer);
-      })
-      .catch((err) => {
-        flowchartDiv.innerHTML = `<p style="color:red;">Mermaid rendering failed: ${err.message}</p>`;
-        console.error("❌ Mermaid render() error:", err);
+    try {
+      window.mermaid.render('generatedChart', flowchart, (svgCode) => {
+        flowchartDiv.innerHTML = svgCode;
       });
+    } catch (err) {
+      flowchartDiv.innerHTML = `<p style="color:red;">Mermaid rendering failed: ${err.message}</p>`;
+      console.error("❌ Mermaid render() failed:", err);
+    }
   }
 });
