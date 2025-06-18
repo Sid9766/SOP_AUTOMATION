@@ -6,8 +6,12 @@ window.addEventListener("DOMContentLoaded", () => {
 
     const fileInput = document.getElementById('pdfInput');
     const file = fileInput.files[0];
-    if (!file) return alert("Please select a PDF first.");
+    if (!file) {
+      alert("Please select a PDF first.");
+      return;
+    }
 
+    console.log("📤 Uploading file:", file.name);
     const formData = new FormData();
     formData.append('file', file);
 
@@ -18,22 +22,26 @@ window.addEventListener("DOMContentLoaded", () => {
       });
 
       const data = await response.json();
-      let steps = data.steps || [];
+      console.log("✅ Parsed steps from backend:", data.steps);
 
-      steps = steps.filter(line =>
-        /^(\u2022\s*)?Step\s+\d+:/.test(line.trim())
-      );
+      const steps = data.steps;
+
+      if (!Array.isArray(steps) || steps.length === 0) {
+        alert("No valid steps returned.");
+        return;
+      }
 
       renderStepCards(steps);
       renderChart(steps);
       renderMermaid(steps);
+
     } catch (err) {
-      console.error("Upload failed:", err);
-      alert("Something went wrong while uploading the PDF. Check console.");
+      console.error("❌ Upload failed:", err);
+      alert("Something went wrong while uploading the PDF.");
     }
   });
 
-  // 🧩 Card Renderer
+  // 💡 Card Renderer
   function renderStepCards(steps) {
     const container = document.getElementById('cardsContainer');
     container.innerHTML = '';
@@ -50,7 +58,7 @@ window.addEventListener("DOMContentLoaded", () => {
     const ctx = document.getElementById('chartCanvas').getContext('2d');
     const deptKeywords = ['HR', 'IT', 'Finance', 'Admin', 'Manager'];
     const counts = deptKeywords.map(dept =>
-      steps.filter(step => step.includes(dept)).length
+      steps.filter(step => step.toLowerCase().includes(dept.toLowerCase())).length
     );
 
     new Chart(ctx, {
@@ -72,12 +80,12 @@ window.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // 📈 Mermaid Flowchart Renderer (fully safe + patched)
+  // ✅ Safe Mermaid Render
   function renderMermaid(steps) {
     const flowchartDiv = document.getElementById('flowchartContainer');
     flowchartDiv.innerHTML = '';
 
-    if (!steps || steps.length === 0) {
+    if (!Array.isArray(steps) || steps.length === 0) {
       flowchartDiv.innerHTML = '<p style="color:red;">No valid steps found.</p>';
       return;
     }
@@ -110,9 +118,8 @@ window.addEventListener("DOMContentLoaded", () => {
       });
     }
 
-    console.log("🧪 Mermaid Flowchart:\n", flowchart);
+    console.log("🧪 Mermaid Syntax:\n", flowchart);
 
-    // ✅ Safe render with detached anchor to avoid createElementNS error
     const tempContainer = document.createElement('div');
     document.body.appendChild(tempContainer);
 
